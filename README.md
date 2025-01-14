@@ -66,7 +66,6 @@ Make sure to restart the claude desktop app after updating the config file.
 
 2. **Insert Entries**
    - Insert new entries into a specified table.
-   - **Endpoint:** `/insert-entry`
    - **Input from Claude Desktop:**
      ```json
      {
@@ -80,7 +79,6 @@ Make sure to restart the claude desktop app after updating the config file.
 
 3. **Update Entries**
    - Update existing entries in a table based on conditions.
-   - **Endpoint:** `/update-entry`
    - **Input from Claude Desktop:**
      ```json
      {
@@ -94,7 +92,6 @@ Make sure to restart the claude desktop app after updating the config file.
 
 4. **Delete Entries**
    - Delete specific entries in a table based on conditions.
-   - **Endpoint:** `/delete-entry`
    - **Input from Claude Desktop:**
      ```json
      {
@@ -105,7 +102,6 @@ Make sure to restart the claude desktop app after updating the config file.
 
 5. **Drop Tables**
    - Drop existing tables from the database.
-   - **Endpoint:** `/delete-table`
    - **Input from Claude Desktop:**
      ```json
      {
