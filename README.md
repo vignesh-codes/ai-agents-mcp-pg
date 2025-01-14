@@ -122,18 +122,6 @@ The server provides schema information for each table in the database:
   - Includes column names and data types.
   - Automatically discovered from database metadata.
 
-
-
-Replace `/mydb` with your database name.
-
-## Building
-
-Docker:
-
-```sh
-docker build -t mcp/postgres -f src/Dockerfile .
-```
-
 ## Sample 
 
 ### Input to Claude Desktop
@@ -546,3 +534,6 @@ mydatabase=# SELECT * FROM orders;
   4 |          5 | 4K TV          |        1 | 2024-01-13
 (4 rows)
 ```
+
+## License
+This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
