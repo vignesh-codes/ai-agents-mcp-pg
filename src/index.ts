@@ -61,7 +61,7 @@ async function insertDebugEntry() {
   }
 }
 
-// List resources handler
+// List resources handler - provides information about all available database tables
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
 
   const client = await pool.connect();
@@ -77,6 +77,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
         uri: new URL(`${row.table_name}/${SCHEMA_PATH}`, resourceBaseUrl).href,
         mimeType: "application/json",
         name: `"${row.table_name}" database schema`,
+        description: `Schema information for the "${row.table_name}" table, including column names and data types. Use this to understand the table structure before querying or modifying it.`,
       })),
     };
   } catch (error) {
@@ -86,7 +87,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
   }
 });
 
-// Read resource handler
+// Read resource handler - retrieves detailed schema information for a specific table
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
   const resourceUrl = new URL(request.params.uri);
@@ -97,7 +98,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
 
   if (schema !== SCHEMA_PATH) {
-    throw new Error("Invalid resource URI");
+    throw new Error("Invalid resource URI - must end with '/schema' to retrieve table schema information");
   }
 
   const client = await pool.connect();
@@ -126,41 +127,46 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 });
 
 // This handler returns the list of tools that the server supports
-/*
-Has the following properties:
-- name: The name of the tool
-- description: A short description of the tool's purpose
-- inputSchema: The JSON schema for the input parameters of the tool
-
-for query, create_table, insert_entry, delete_table, update_entry, delete_entry
-*/
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
         name: "query",
-        description: "Run a read-only SQL query",
+        description: "Run a read-only SQL query against the PostgreSQL database and return the results as JSON. Use this tool to retrieve data without modifying the database. Only SELECT statements and other non-modifying operations are allowed. Example: Query all users with age greater than 18.",
         inputSchema: {
           type: "object",
           properties: {
-            sql: { type: "string" },
+            sql: { 
+              type: "string",
+              description: "The SQL query to execute. Must be a SELECT statement or other read-only operation. Example: 'SELECT * FROM users WHERE age > 18'"
+            },
           },
         },
       },
       {
         name: "create_table",
-        description: "Create a new table in the database",
+        description: "Create a new table in the PostgreSQL database with specified columns and data types. Use this tool to define new database tables with custom schemas. Example: Create a users table with id, name, email, and created_at columns.",
         inputSchema: {
           type: "object",
           properties: {
-            tableName: { type: "string" },
+            tableName: { 
+              type: "string",
+              description: "Name for the new table. Should follow SQL naming conventions (letters, numbers, underscores). Example: 'users' or 'product_inventory'"
+            },
             columns: {
               type: "array",
+              description: "List of column definitions for the table, each with a name and PostgreSQL data type. Example: [{\"name\": \"id\", \"type\": \"SERIAL PRIMARY KEY\"}, {\"name\": \"name\", \"type\": \"VARCHAR(255)\"}, {\"name\": \"email\", \"type\": \"TEXT\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP\"}]",
               items: {
                 type: "object",
                 properties: {
-                  name: { type: "string" },
-                  type: { type: "string" },
+                  name: { 
+                    type: "string",
+                    description: "Column name. Should follow SQL naming conventions. Example: 'user_id' or 'email_address'"
+                  },
+                  type: { 
+                    type: "string",
+                    description: "PostgreSQL data type for this column. Examples: 'INTEGER', 'TEXT', 'VARCHAR(255)', 'TIMESTAMP', 'BOOLEAN', 'SERIAL PRIMARY KEY'"
+                  },
                 },
                 required: ["name", "type"],
               },
@@ -171,14 +177,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "insert_entry",
-        description: "Insert a new entry into a table",
+        description: "Insert a new row/record into an existing table in the PostgreSQL database. Use this tool to add data to your tables. Example: Add a new user with name 'John Doe', email 'john@example.com', and age 30 to the users table.",
         inputSchema: {
           type: "object",
           properties: {
-            tableName: { type: "string" },
+            tableName: { 
+              type: "string",
+              description: "Name of the existing table to insert data into. Example: 'users'"
+            },
             values: {
               type: "object",
-              additionalProperties: { type: "string" },
+              description: "Key-value pairs where keys are column names and values are the data to insert. All values are passed as strings and converted to appropriate types by PostgreSQL. Example: {\"name\": \"John Doe\", \"email\": \"john@example.com\", \"age\": \"30\"}",
+              additionalProperties: { 
+                type: "string",
+                description: "String representation of the value to insert. Will be converted to the appropriate type by PostgreSQL."
+              },
             },
           },
           required: ["tableName", "values"],
@@ -186,29 +199,43 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "delete_table",
-        description: "Delete a table from the database",
+        description: "Permanently delete/drop an entire table from the PostgreSQL database, including all its data. Use with caution as this operation cannot be undone. Example: Delete a temporary_logs table that is no longer needed.",
         inputSchema: {
           type: "object",
           properties: {
-            tableName: { type: "string" },
+            tableName: { 
+              type: "string",
+              description: "Name of the table to delete. This operation cannot be undone. Example: 'temporary_logs'"
+            },
           },
           required: ["tableName"],
         },
       },
       {
         name: "update_entry",
-        description: "Update an entry in a table",
+        description: "Update existing rows in a PostgreSQL table that match specified conditions. Use this tool to modify data that already exists in the database. Example: Update the status to 'active' and last_login to current date for user with ID 42.",
         inputSchema: {
           type: "object",
           properties: {
-            tableName: { type: "string" },
+            tableName: { 
+              type: "string",
+              description: "Name of the table containing records to update. Example: 'users'"
+            },
             values: {
               type: "object",
-              additionalProperties: { type: "string" },
+              description: "Key-value pairs of columns to update and their new values. Example: {\"status\": \"active\", \"last_login\": \"2025-03-23\"}",
+              additionalProperties: { 
+                type: "string",
+                description: "String representation of the new value. Will be converted to the appropriate type by PostgreSQL."
+              },
             },
             conditions: {
               type: "object",
-              additionalProperties: { type: "string" },
+              description: "Key-value pairs that specify which rows to update (WHERE clause conditions). Only rows matching ALL conditions will be updated. Example: {\"user_id\": \"42\", \"status\": \"pending\"}",
+              additionalProperties: { 
+                type: "string",
+                description: "String representation of the condition value. Will be compared using equality (=) operator."
+              },
             },
           },
           required: ["tableName", "values", "conditions"],
@@ -216,14 +243,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "delete_entry",
-        description: "Delete an entry from a table",
+        description: "Delete rows/records from a PostgreSQL table that match specified conditions. Use this tool to remove data from your database tables. Example: Delete all inactive users or users who haven't logged in since January 1, 2024.",
         inputSchema: {
           type: "object",
           properties: {
-            tableName: { type: "string" },
+            tableName: { 
+              type: "string",
+              description: "Name of the table to delete records from. Example: 'users'"
+            },
             conditions: {
               type: "object",
-              additionalProperties: { type: "string" },
+              description: "Key-value pairs that specify which rows to delete (WHERE clause conditions). Only rows matching ALL conditions will be deleted. Example: {\"status\": \"inactive\", \"last_login_before\": \"2024-01-01\"}",
+              additionalProperties: { 
+                type: "string",
+                description: "String representation of the condition value. Will be compared using equality (=) operator."
+              },
             },
           },
           required: ["tableName", "conditions"],
