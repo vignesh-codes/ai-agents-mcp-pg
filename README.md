@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/vignesh-codes-ai-agents-mcp-pg-badge.png)](https://mseep.ai/app/vignesh-codes-ai-agents-mcp-pg)
+
 # PostgreSQL MCP Server
 
 A Model Context Protocol server that provides access to PostgreSQL databases. This server enables LLMs to interact with databases to inspect schemas, execute queries, and perform CRUD (Create, Read, Update, Delete) operations on database entries. This repo is an extension of [PostgreSQL MCP Server](https://github.com/modelcontextprotocol/servers/tree/main/src/postgres) providing functionalities to create tables, insert entries, update entries, delete entries, and drop tables.
